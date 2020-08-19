@@ -1,6 +1,6 @@
-IOT device lbs services
+IOT device LBS service demos
 
-1. Based by cellular
+1. Based on  cellular
 
-2. based by wifi
+2. Based on  wifi
 
