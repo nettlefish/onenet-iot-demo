@@ -8,7 +8,7 @@ Note:
 
 3.Just show how to run,no optimization.
 
-4.Cannot use in any critical environment.
+4.Cannot be used in any critical environment.
 
 Include:
 
