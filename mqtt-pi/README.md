@@ -27,7 +27,9 @@ How to compile and run....
 2. get/change hostid, and modify mib_mqtt_v1.ini.
 
 3. install openssl; 
+
    install paho mqtt c lib, goto: 
+
 	https://www.eclipse.org/paho/index.php?page=clients/c/index.php  and https://github.com/eclipse/paho.mqtt.c
 	must configure with SSL support.
 
@@ -40,15 +42,21 @@ How to compile and run....
 7. install cjson from https://github.com/DaveGamble/cJSON
 
 8. compile in PI zero:
+
 	gcc -c -o minIni.o  minIni.c
+
 	gcc -g -o device_run device_run.c minIni.o -lzlog  -lpaho-mqtt3as -lcrypto -lcjson -lwiringPi -lpthread
+
    compile in PC linux(vmware or virtualbox):
+
 	gcc -c -o minIni.o  minIni.c
+
 	gcc -g -o device_run device_run.c minIni.o -lzlog  -lpaho-mqtt3as -lcrypto -lcjson -lpthread
 
 9. download tls certificate file(just like: MQTTS-certificate.pem) and put with device_run in same directionary.  https://open.iot.10086.cn/doc/mqtt/book/device-develop/manual.html
 
 10. start device mqtt client:
+
 	./device_run &
 
 

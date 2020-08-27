@@ -2,6 +2,7 @@
 OneNet Demo Code
 
 Note:
+
 1.Just as reference.
 
 2.Just as demo.
@@ -12,8 +13,8 @@ Note:
 
 Include:
 
-1.Try to show more  OneNet IOT open sections. 
+1.Try to show more OneNet IOT open sections. 
 
-2.Try to show more code or  more hardware/software environment  examples.
+2.Try to show more code or more hardware/software environment examples.
 
 
