@@ -5,7 +5,7 @@ This is a IOT MQTT demo programe.
 
 2. Recv command from rmt administor and execute cmd.
 
-3. Send back command execute result nformation to rmt administor.
+3. Send back command execute result information to rmt administor.
 
 4. pub json dataset periodicly with adjustable interval.
 
