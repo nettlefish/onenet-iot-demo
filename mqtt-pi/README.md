@@ -53,7 +53,7 @@ How to compile and run....
 
 	gcc -g -o device_run device_run.c minIni.o -lzlog  -lpaho-mqtt3as -lcrypto -lcjson -lpthread
 
-9. download tls certificate file(just like: MQTTS-certificate.pem) and put with device_run in same directionary.  https://open.iot.10086.cn/doc/mqtt/book/device-develop/manual.html
+9. download tls certificate file(just like: MQTTS-certificate.pem) and put with device_run in same directory.  https://open.iot.10086.cn/doc/mqtt/book/device-develop/manual.html
 
 10. start device mqtt client:
 
