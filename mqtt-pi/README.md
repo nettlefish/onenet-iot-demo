@@ -1,21 +1,21 @@
 
 This is a IOT MQTT demo programe.
 
-1. A complete sub/pub mqtt client programe using in Onenet IOT network.
+1. A complete sub/pub mqtt client programe can run in Onenet IOT network.
 
 2. Recv command from rmt administor and execute cmd.
 
-3. Send back command execute result to rmt administor.
+3. Send back command execute result nformation to rmt administor.
 
 4. pub json dataset periodicly with adjustable interval.
 
-5. auto re-connect with link tiredown.
+5. auto re-connect when link tiredown.
 
-6. running in pi zero with I2C devices, can modify simply fit to other linux environment (just change PI_MODE = 1 to PI_MODE = 0 ).
+6. running in pi zero with I2C devices, but can modify simply fit to other linux environment (just change PI_MODE = 1 to PI_MODE = 0 ).
 
 7. running statistics output.
 
-8. support to TLS1.3.
+8. support TLS.
 
 9. some codes get from OneNet example code. 
 
@@ -53,7 +53,7 @@ How to compile and run....
 
 	gcc -g -o device_run device_run.c minIni.o -lzlog  -lpaho-mqtt3as -lcrypto -lcjson -lpthread
 
-9. download tls certificate file(just like: MQTTS-certificate.pem) and put with device_run in same directory.  https://open.iot.10086.cn/doc/mqtt/book/device-develop/manual.html
+9. download tls certificate file(just like: MQTTS-certificate.pem) and put with device_run in same directory. download link: https://open.iot.10086.cn/doc/mqtt/book/device-develop/manual.html
 
 10. start device mqtt client:
 
