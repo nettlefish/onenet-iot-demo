@@ -1431,8 +1431,9 @@ char* getPowerState(char* PowerSatateUB)
                 else    { zlog_info(zc,"getPowerState: Power with USB(%d).",PoweState);
                               return("U");
                         }
-	}
+	} else {
 	return("U");
+	}
 }
 
 float getVCell()
