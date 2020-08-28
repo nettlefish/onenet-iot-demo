@@ -59,5 +59,10 @@ How to compile and run....
 
 	./device_run 
 
+     If you allow administor power-down system from remote:
+	
+	sudo ./device_run
+
+
 
 

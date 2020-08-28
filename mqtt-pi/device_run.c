@@ -451,6 +451,8 @@ int  main(int argc, char* argv[])
                 endTimeSt->tm_min, endTimeSt->tm_sec);
 	
 	OutPutStatReport(StartTimeStr,EndTimeStr);
+
+	zlog_info(zc,"Closing zlog....");
 	zlog_fini();
 
 	remove(PLOCKFILENAME);
@@ -1527,10 +1529,15 @@ void quickStart()
 void power_down_sys()
 {
 
-        printf("Rcved halt_sys Command from administor, System is downing in 5 seconds......\n");
-	zlog_info(zc,"power_down_sys: Rcved halt_sys Command from administor, System is downing in 5 seconds.....");
+        printf("Rcved halt_sys Command from administor, System is downing in 4 seconds......\n");
+	zlog_info(zc,"power_down_sys: Rcved halt_sys Command from administor, System is downing in 4 seconds.....");
 
         sleep(4);
+	
+        zlog_fini();
+
+        remove(PLOCKFILENAME);
+
 
         sync();
         reboot(LINUX_REBOOT_CMD_POWER_OFF);
@@ -1564,6 +1571,10 @@ float Get_Cpu_Temperature(void)
     return temp;
 }
 
+/*
+ * Can manually change "eth0" and "wlan0" to your system network instance name.
+ *
+ **/
 void  Collect_CreatjSON(struct pubsub_opts_struct* opts)
 {
 
@@ -1910,6 +1921,8 @@ void destoryandExit(void *context)
 
         time_t EndTime = 0;
         char EndTimeStr[42] = {'\0'};
+	int lockfile = -1;
+	int rc;
 
         struct tm *endTimeSt = NULL;
 
@@ -1926,7 +1939,39 @@ void destoryandExit(void *context)
 	exitmainloop = 1;
 	sleep(2);
 */
+
+	zlog_info(zc,"Try to power off.");
+	
 	power_down_sys();
+
+	lockfile = open(PLOCKFILENAME, O_RDWR | O_TRUNC | O_CREAT | O_EXCL, 0664);
+
+	if (lockfile < 0 )
+        {
+                if (errno == EEXIST)
+                        {
+                          printf("Duplicate instance exist! Exit/Check...\n");
+                          exit(0);
+                        }
+                return;
+        }
+
+	
+        /*init zlog     */
+        rc = zlog_init(ZCCONFIG);
+        if (rc) {
+                printf("zlog init failed\n");
+                return;
+        }
+
+        zc = zlog_get_category("cat1");
+        if (!zc) {
+                printf("zlog get cat fail\n");
+                zlog_fini();
+                return;
+        }
+
+	zlog_info(zc,"Power off failed, re-init zlog,and the lock file recreated: %d",lockfile);
 	
 	return;
 
