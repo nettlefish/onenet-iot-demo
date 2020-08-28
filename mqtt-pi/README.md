@@ -57,7 +57,7 @@ How to compile and run....
 
 10. start device mqtt client:
 
-	./device_run &
+	./device_run 
 
 
 

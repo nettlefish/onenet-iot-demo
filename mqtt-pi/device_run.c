@@ -1,7 +1,6 @@
 /**
- * for PI Zero :
+ * for pi:
  * gcc -g -o device_run device_run.c minIni.o -lzlog  -lpaho-mqtt3as -lcrypto -lcjson -lwiringPi -lpthread
- *
  **/
 
 #include <stdio.h>
@@ -33,6 +32,7 @@
 #include <netdb.h>
 #include <netinet/in.h>
 #include <net/if.h>
+#include <errno.h>
 #include "MQTTAsync.h"
 #include <unistd.h>
 #include "zlog.h"
@@ -55,6 +55,7 @@
 #define COMMAND_REGISTER        0xFE
 #define PowerDown_th    30
 #define STATFILENAME "mqtt_device_run_stat.txt"
+#define PLOCKFILENAME "/tmp/.lOcKPJuST1pCaNrUN.LOCK"
 
 #define sizearray(a)  (sizeof(a) / sizeof((a)[0]))
 
@@ -236,6 +237,15 @@ struct pubsub_opts_struct common_opts =
 	600,NULL,
 };
 
+/*
+MQTTAsync_responseOptions opts = MQTTAsync_responseOptions_initializer;
+MQTTAsync_disconnectOptions disc_opts = MQTTAsync_disconnectOptions_initializer;
+MQTTAsync_createOptions create_opts = MQTTAsync_createOptions_initializer;
+MQTTProperty property;
+MQTTProperties props = MQTTProperties_initializer;
+MQTTAsync_responseOptions common_pub_opts = MQTTAsync_responseOptions_initializer;
+*/
+
 
 void connlost(void *context, char *cause);
 int msgarrvd(void *context, char *topicName, int topicLen, MQTTAsync_message *message);
@@ -284,6 +294,7 @@ int  main(int argc, char* argv[])
 	int rc;
 	int ch;
 	int inirc;
+	int lockfilehd = -1;
         char StartTimeStr[42] = {'\0'};
         char EndTimeStr[42] = {'\0'};
         time_t StartTime = 0;
@@ -291,6 +302,18 @@ int  main(int argc, char* argv[])
         struct tm *startTimeSt = NULL;
         struct tm *endTimeSt = NULL;
 
+	lockfilehd = open(PLOCKFILENAME, O_RDWR | O_TRUNC | O_CREAT | O_EXCL, 0664);
+
+	if (lockfilehd < 0 )
+	{
+		if (errno == EEXIST)
+			{
+			  printf("Duplicate instance start ! Exit...\n");
+			  return -1;
+			}
+		return -1;
+	}
+	
 
 	/*init zlog	*/
         rc = zlog_init(ZCCONFIG);
@@ -429,6 +452,9 @@ int  main(int argc, char* argv[])
 	
 	OutPutStatReport(StartTimeStr,EndTimeStr);
 	zlog_fini();
+
+	remove(PLOCKFILENAME);
+
 	return 1;
 
 }
@@ -1221,7 +1247,7 @@ int urldecode(char* *lpszDest, const char* pszUrl, size_t nLen)
     pNew = (char*)malloc(sizeof(char) * strlen(*lpszDest) + 1);
     if (!pNew)
         return -1;
-    strncpy(pNew, *lpszDest, strlen(*lpszDest) + 1); 
+    strncpy(pNew, *lpszDest, strlen(*lpszDest) + 1); // +1拷贝'\0'
     free(*lpszDest);
     *lpszDest = pNew;
 
