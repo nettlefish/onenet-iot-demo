@@ -223,6 +223,7 @@ typedef struct pubsub_opts_struct
 	/*eighth line	*/
 	int current_interval;
 	char* start_time_str;
+	int payloaded_to_send;
 	
 }pubsub_opts_struct;
 
@@ -234,7 +235,7 @@ struct pubsub_opts_struct common_opts =
 	0,"./MQTTS-certificate.pem","$sys/%s/%s/#","$sys/%s/%s/dp/post/json","$sys/%s/%s/cmd/response/%s",
 	"normal",60,600,0,0,NULL,
 	NULL,NULL,0,"2018-10-31",1,0,
-	600,NULL,
+	600,NULL,0,
 };
 
 /*
@@ -1352,18 +1353,16 @@ int commonpublish(void *context,struct pubsub_opts_struct* opts)
 		if ( opts->stop_publish == 0 ) {
 		rc = MQTTAsync_sendMessage(client, opts->pub_topic, &pubmsg, &pub_opts);
 
-        	if ( rc != MQTTASYNC_SUCCESS ) {
+        		if ( rc != MQTTASYNC_SUCCESS ) {
              		zlog_info(zc, "Error from MQTTAsync_send: %s", MQTTAsync_strerror(rc));
 			finished = 1;	
-			exit(EXIT_FAILURE);	
-				}
-			} else {
+				} 
+		} else {
 			printf("Stop report setting: %d, idle...\n",opts->stop_publish);
 			zlog_info(zc,"commonpublish/while loop:Stop report setting: %d, idle...",opts->stop_publish);
-			}	
+		}	
 		hsleep(opts->current_interval);
 		Collect_CreatjSON(opts);
-		
 
 		printf(REVERSE"Current publish/report interval setting: [%ds]\n"NONE,opts->current_interval);
 	}
@@ -1596,6 +1595,7 @@ void  Collect_CreatjSON(struct pubsub_opts_struct* opts)
         al= (char *)malloc(15);
 
         strcpy(al,"Normal");
+	opts->payloaded_to_send = 0;
 
         cJSON* report_body = NULL;
         cJSON* dp_body = NULL;
@@ -1812,6 +1812,8 @@ void  Collect_CreatjSON(struct pubsub_opts_struct* opts)
 
         opts->payload_message = strdup(cJSON_PrintUnformatted(report_body));
 	
+	opts->payloaded_to_send = 1;
+
 	opts->alarm_level = strdup(al);
 
         cJSON_Delete(report_body);
@@ -1895,9 +1897,15 @@ char* executeRemoteCmd(char* cmdString, struct pubsub_opts_struct* opts, void* c
 		}
 
 		else if(strcasecmp("halt_sys", cmdString) == 0) {
-		cmd_respond_str = "Executed cmd [halt_sys], but without permission!";	
-		zlog_info(zc,"executeRemoteCmd, execute to halt_sys!");
-		destoryandExit(context); 
+			int uid;
+			uid = getuid();
+			if (uid == 0 ) { 
+			zlog_info(zc,"executeRemoteCmd, execute to halt_sys!,uid:%d",uid);
+			destoryandExit(context);	
+			} else {
+			cmd_respond_str = "Executed cmd [halt_sys], but without permission!";	
+			zlog_info(zc,"executeRemoteCmd, execute to halt_sys!,but without permission! uid:%d.",uid);
+			}
 		
 		}
 		else if(strstr(cmdString,"Notes:") != 0) {
@@ -1922,7 +1930,6 @@ void destoryandExit(void *context)
 
         time_t EndTime = 0;
         char EndTimeStr[42] = {'\0'};
-	int lockfile = -1;
 	int rc;
 
         struct tm *endTimeSt = NULL;
@@ -1945,35 +1952,6 @@ void destoryandExit(void *context)
 	
 	power_down_sys();
 
-	lockfile = open(PLOCKFILENAME, O_RDWR | O_TRUNC | O_CREAT | O_EXCL, 0664);
-
-	if (lockfile < 0 )
-        {
-                if (errno == EEXIST)
-                        {
-                          printf("Duplicate instance exist! Exit/Check...\n");
-                          exit(0);
-                        }
-                return;
-        }
-
-	
-        /*init zlog     */
-        rc = zlog_init(ZCCONFIG);
-        if (rc) {
-                printf("zlog init failed\n");
-                return;
-        }
-
-        zc = zlog_get_category("cat1");
-        if (!zc) {
-                printf("zlog get cat fail\n");
-                zlog_fini();
-                return;
-        }
-
-	zlog_info(zc,"Power off failed, re-init zlog,and the lock file recreated: %d",lockfile);
-	
 	return;
 
 }
