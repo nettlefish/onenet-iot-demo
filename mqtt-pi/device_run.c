@@ -2044,6 +2044,7 @@ int duprunning()
 		return 1;
 	}
 
+	ftruncate(lockfilehd, 0);
         snprintf(buf, 32, "%ld", (long)getpid());
         write(lockfilehd, buf, strlen(buf)+1);
 	zlog_info(zc,"duprunning: Lock file setting succ....");
