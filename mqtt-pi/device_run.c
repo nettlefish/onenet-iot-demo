@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ioctl.h>
+#include <sys/file.h>
 #include <fcntl.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -173,7 +174,6 @@ const char Config_File[] = "mib_mqtt_v1.ini";
 static zlog_category_t *zc;
 
 
-
 typedef struct pubsub_opts_struct
 {
         int publisher;  
@@ -288,6 +288,8 @@ int commonpublish(void* context,struct pubsub_opts_struct* opts);
 char* executeRemoteCmd(char* cmdString, struct pubsub_opts_struct* opts,void* context);
 void destoryandExit(void *context);
 void OutPutStatReport(char *startt, char *endt);
+int lockflagset(int fd);
+int duprunning();
 
 
 int  main(int argc, char* argv[])
@@ -295,25 +297,12 @@ int  main(int argc, char* argv[])
 	int rc;
 	int ch;
 	int inirc;
-	int lockfilehd = -1;
         char StartTimeStr[42] = {'\0'};
         char EndTimeStr[42] = {'\0'};
         time_t StartTime = 0;
         time_t EndTime = 0;
         struct tm *startTimeSt = NULL;
         struct tm *endTimeSt = NULL;
-
-	lockfilehd = open(PLOCKFILENAME, O_RDWR | O_TRUNC | O_CREAT | O_EXCL, 0664);
-
-	if (lockfilehd < 0 )
-	{
-		if (errno == EEXIST)
-			{
-			  printf("Duplicate instance start ! Exit...\n");
-			  return -1;
-			}
-		return -1;
-	}
 	
 
 	/*init zlog	*/
@@ -329,6 +318,17 @@ int  main(int argc, char* argv[])
                 zlog_fini();
                 return -2;
         }
+
+
+        if ( duprunning() ) {
+
+        printf("Start mqtt client process with fault error [dup instance start], exit...\n");
+	zlog_info(zc, "Start mqtt client process with fault error [dup instance start], exit...");
+
+        return -1;
+
+        }
+
 
         zlog_info(zc, "Hello, device start mqtt clent programe.");
 	printf(BOLD"Hello, device start mqtt clent programe.\n"NONE);
@@ -2002,4 +2002,52 @@ void OutPutStatReport(char *startt, char *endt)
         fprintf(stdout,"Items:\tCollect\tloops                                  \n");
         fprintf(stdout,"Data:\t%ld\t%ld                                 \n",stat_collect,stat_mainloop);
         fprintf(stdout,"End report.                                     \n");
+}
+
+int lockflagset(int fd)
+{
+	struct flock fl;
+	fl.l_type = F_WRLCK;
+	fl.l_start = 0;
+	fl.l_whence = SEEK_SET;
+	fl.l_len = 0;
+	return (fcntl(fd, F_SETLK, &fl));
+}
+ 
+int duprunning()
+{
+        int lockfilehd = -1;
+        char buf[32] = {'\0'};
+
+	lockfilehd = open(PLOCKFILENAME, O_RDWR | O_CREAT , (S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH));
+
+        if (lockfilehd < 0 )
+        {
+                if (errno == EEXIST)
+                        {
+			  zlog_info(zc,"duprunning: lock file exist.");
+                        } else {
+			zlog_info(zc,"duprunning: creat/open file error.");
+			return 1;
+		}
+        }
+
+	if(lockflagset(lockfilehd)){
+		
+		if (errno == EACCES || errno == EAGAIN){
+		zlog_info(zc, "duprunning: lockfileflagset error, exit with %d.",errno );
+		close(lockfilehd);
+		return 1;
+		}
+		zlog_info(zc, "duprunning: lockfileflagset error, exit with error.");
+		close(lockfilehd);	
+		return 1;
+	}
+
+        snprintf(buf, 32, "%ld", (long)getpid());
+        write(lockfilehd, buf, strlen(buf)+1);
+	zlog_info(zc,"duprunning: Lock file setting succ....");
+
+	return 0;
+
 }
